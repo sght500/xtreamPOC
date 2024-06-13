@@ -38,8 +38,8 @@ For Windows, you can use the binaries available from mpv's home page.
 # python libraries
 Although I tried to capture all the libraries required by my Python script while I was deploying it on my old HP 1000, it's not guaranteed I captured them all. The Python libraries I know you will need are listed here as pip install commands:
 
-<code>pip install pyxtream</code>
-<code>pip install pyxtream[REST_API]</code>
-<code>pip install jsonschema</code>
-<code>pip install nicegui</code>
+<code>pip install pyxtream
+pip install pyxtream[REST_API]
+pip install jsonschema
+pip install nicegui</code>
 
