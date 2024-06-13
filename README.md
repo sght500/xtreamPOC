@@ -45,8 +45,7 @@ You can get mpv from it's home page: https://mpv.io/
 
 For linux distros like Debian, Ubuntu or Mint you can simply say:
 
-<code>
-sudo apt install mpv
+<code>sudo apt install mpv
 </code>
 
 For Windows, you can use the binaries available from mpv's home page.
@@ -55,8 +54,7 @@ For Windows, you can use the binaries available from mpv's home page.
 Although I tried to capture all the libraries required by my python script while I was deploying it in my old HP 1000, it's not warantied I captured them all.
 The python libraries I know you will need are listed here as pip install commands:
 
-<code>
-pip install pyxtream
+<code>pip install pyxtream
 pip install pyxtream[REST_API]
 pip install jsonschema
 pip install nicegui
