@@ -7,6 +7,7 @@ Date:           2024-06-12
 
 Version History:
 - v0.1 (2024-06-12): It uses pyXtream, mpv and nicegui.
+- v0.2 (2024-09-15): Adds "Replay" switch to replay stream when fails.
 
 Copyright 2024 Mario Montoya
 
