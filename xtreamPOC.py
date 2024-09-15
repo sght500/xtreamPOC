@@ -47,27 +47,31 @@ def open_stream_url(url):
     args = ['--slang=eng', '--alang=eng', '--fullscreen', url]
     # Run the mpv command
     if platform.system() == "Windows":
-        subprocess.Popen([mpv_path] + args)
+        subprocess.run([mpv_path] + args)
     elif platform.system() == "Darwin" or platform.system() == "Linux":  # macOS or Linux
-        subprocess.Popen(['mpv'] + args)
+        subprocess.run(['mpv'] + args)
     else:
         raise OSError("Unsupported operating system")    
 
-def play_stream_id(stream_id, streams):
+async def play_stream_id(stream_id, streams):
     played = False
     for stream in streams:
         if stream_id == stream.get('stream_id', 0) and not played:
             print(f"Playig {stream['name']}")
             ui.notify(f"Playig {stream['name']}")
-            open_stream_url(stream['url'])
+            while True:
+                await asyncio.to_thread(open_stream_url, stream['url'])
+                ui.update(replay)
+                if not replay.value:
+                    break
             played = True
 
-def play_episode_id(episode_id, episodes):
+async def play_episode_id(episode_id, episodes):
     for episode_obj in episodes:
         if episode_obj.id == episode_id:
             print(f"Playing {episode_obj.title}")
             ui.notify(f"Playing {episode_obj.title}")
-            open_stream_url(episode_obj.url)
+            await asyncio.to_thread(open_stream_url, episode_obj.url)
 
 def is_valid_image_url(url):
     try:
@@ -203,19 +207,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 Mario Montoya <marioSGHT500@gmail.com>""")
 
 # Innitializes xt and connects to your IPTV provider
-xt = XTream(provider_name, username, password, provider_url)
-if xt.auth_data != {}:
-    xt.load_iptv()
+try:
+    xt = XTream(provider_name, username, password, provider_url)
+    if xt.auth_data != {}:
+        xt.load_iptv()
+    else:
+        raise Exception(f"Invalid username {username} and/or password")
+except Exception as error:
+    print("Error:", type(error).__name__, "–", error)
+    print("Please, verify your credentials.")
 else:
-    print("Could not connect")
-    exit()
+    # Page title and search row
+    ui.page_title('xtreamPOC - sght500')
+    with ui.row().style('width: 100%;') as search_row:
+        search_input = ui.input("Enter name to search:", placeholder="For Example: Game of Thrones").style('width: 68%;')
+        ui.button('Search', on_click=lambda: asyncio.create_task(ui_search_stream())).style('width: 18%;')
+        replay = ui.switch("Replay").style('width: 10%;')
+    # Two result rows
+    channel_row = ui.row()
+    serie_row = ui.row()
 
-# Creates a wide search row
-with ui.row().style('width: 100%;') as search_row:
-    search_input = ui.input("Enter name to search:", placeholder="For Example: Juego de Tronos").style('width: 78%;')
-    ui.button('Search', on_click=lambda: asyncio.create_task(ui_search_stream())).style('width: 20%;')
-# And two result rows
-channel_row = ui.row()
-serie_row = ui.row()
-
-ui.run()
+    ui.run()
