@@ -14,7 +14,7 @@ Then I tried the IPTV Smarters Web Player: http://webtv.iptvsmarters.com. The is
 Then I tried soperolmo's pyxtream and the Functional Test (<code>functional_test.py</code>). The user interface didn't play any content, and searching for series in the functional test with my IPTV provider caused the script to crash.
 
 # Solution
-This script connects to my IPTV provider using soperlomo's pyxtream. I search for content, including series, and then deserialize the response from my IPTV provider, which is in JSON format. I use some of the objects from soperolmo's pyxtream. However, most of the series information was only available in that JSON format. Thus, I needed to use that raw JSON info and deserialize it to access the series, seasons, and episodes.
+This script connects to my IPTV provider using soperolmo's pyxtream. I search for content, including series, and then deserialize the response from my IPTV provider, which is in JSON format. I use some of the objects from soperolmo's pyxtream. However, most of the series information was only available in that JSON format. Thus, I needed to use that raw JSON info and deserialize it to access the series, seasons, and episodes.
 
 # How you can use it
 You can use this script if you have an IPTV provider that supports Xtream Codes. If your IPTV provider only supports m3u lists, then this script won't work for you.
