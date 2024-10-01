@@ -7,7 +7,8 @@ Date:           2024-06-12
 
 Version History:
 - v0.1 (2024-06-12): It uses pyXtream, mpv and nicegui.
-- v0.2 (2024-09-15): Adds "Replay" switch to replay stream when fails.
+- v0.2 (2024-09-15): Adds "Replay" switch to replay stream when it fails.
+- v0.3 (2024-09-30): Supports multiple IPTV providers with default selection.
 
 Copyright 2024 Mario Montoya
 
@@ -22,7 +23,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 """
 from pyxtream import XTream
 from pyxtream.pyxtream import Serie, Episode
@@ -30,18 +30,15 @@ import requests
 import platform
 import subprocess
 from nicegui import ui
-import random # Random cover images
-import asyncio # Refresh ui
+import random
+import asyncio
+import json
+from pytimedinput import timedKey
 # TODO Remove duplicate streams, like movies.
 
-# Specify the path to the mpv.exe file in Windows
-mpv_path = 'C:\\path\\to\\mpv\\mpv.exe'
-
-# Fill with your Xtream Provider credentials:
-provider_name = 'YourProviderName'
-username = 'user'
-password = '1234'
-provider_url = 'http://yourproviderurl.com:8080/'
+# Open the "xtreamPOC.json" file and fill in:
+#   * The path to the mpv.exe file in Windows
+#   * Your Xtream Provider credentials.
 
 def open_stream_url(url):
     # Specify the command-line arguments
@@ -189,6 +186,17 @@ async def ui_search_stream():
                                 add_label(episode_obj, episodes)
                                 await asyncio.sleep(.01) # Required for ui self-refresh.
 
+# Page title and search row
+ui.page_title('xtreamPOC - sght500')
+with ui.row().style('width: 100%;') as search_row:
+    search_input = ui.input("Enter name to search:", placeholder="For Example: Game of Thrones").style('width: 68%;')
+    ui.button('Search', on_click=lambda: asyncio.create_task(ui_search_stream())).style('width: 18%;')
+    replay = ui.switch("Replay").style('width: 10%;')
+# Two result rows
+channel_row = ui.row()
+serie_row = ui.row()
+ui.run()
+
 # The startup notice
 print("""xtreamPOC: A proof of concept of Xtream Portal Codes using pyXtream, mpv and nicegui.
 Copyright (C) 2024  Mario Montoya
@@ -205,27 +213,73 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-Mario Montoya <marioSGHT500@gmail.com>""")
+Mario Montoya <marioSGHT500@gmail.com>
+""")
 
-# Innitializes xt and connects to your IPTV provider
+# Load JSON configuration file
+with open('xtreamPOC.json', 'r') as file:
+    config = json.load(file)
+mpv_path = config['mpv_path']
+providers = config['iptv_providers']
+time_out = config['time_out']
+default = config['default']
+shift_19 = config['shift_1-9']
+
+# Check if there's a default override
+try:
+    with open('default_override.json', 'r') as file:
+        config = json.load(file)
+    default_override = config['default_override']
+    default = default_override
+except FileNotFoundError:
+    pass
+
+print(f"Available providers: (Select with <Shift> to override default.) You have {time_out} seconds to select.")
+print("-------------------------------------------------")
+options = ""
+for i, provider in enumerate(providers):
+    options = options + str(i + 1)
+    if default == str(i + 1):
+        print(f"{i + 1}. {provider['provider_name']} (*)")
+    else:
+        print(f"{i + 1}. {provider['provider_name']}")
+
+key_options = options + shift_19[0:len(options)]
+userOption, timedOut = timedKey(f"Select provider [{options}]: ", timeout=time_out, allowCharacters=key_options)
+if timedOut:
+    userOption = default
+
+# Check if the user wants to override the default provider
+pos = shift_19.find(userOption)
+if pos >= 0:
+    default_override = options[pos]
+    default_dict = {
+        "default_override": default_override
+    }
+    with open("default_override.json", "w") as file:
+        json.dump(default_dict, file)
+    userOption = default_override
+
+provider = providers[int(userOption) - 1]
+provider_name = provider['provider_name']
+username = provider['username']
+password = provider['password']
+provider_url = provider['provider_url']
+
+print("-------------------------------------------------")
+print(f"Selected provider: {userOption}. {provider_name}")
+print("")
+
+# Innitializes xt and connects to your selected IPTV provider
 try:
     xt = XTream(provider_name, username, password, provider_url)
     if xt.auth_data != {}:
         xt.load_iptv()
+        ui.notify("Connected to: " + provider_name, type="positive")
     else:
         raise Exception(f"Invalid username {username} and/or password")
 except Exception as error:
     print("Error:", type(error).__name__, "–", error)
     print("Please, verify your credentials.")
-else:
-    # Page title and search row
-    ui.page_title('xtreamPOC - sght500')
-    with ui.row().style('width: 100%;') as search_row:
-        search_input = ui.input("Enter name to search:", placeholder="For Example: Game of Thrones").style('width: 68%;')
-        ui.button('Search', on_click=lambda: asyncio.create_task(ui_search_stream())).style('width: 18%;')
-        replay = ui.switch("Replay").style('width: 10%;')
-    # Two result rows
-    channel_row = ui.row()
-    serie_row = ui.row()
-
-    ui.run()
+    ui.notify("Please, verify your credentials.", type="warning")
+    ui.notify("Error: " + type(error).__name__ + f" – {error}", type="negative")
