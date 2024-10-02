@@ -9,6 +9,7 @@ Version History:
 - v0.1 (2024-06-12): It uses pyXtream, mpv and nicegui.
 - v0.2 (2024-09-15): Adds "Replay" switch to replay stream when it fails.
 - v0.3 (2024-09-30): Supports multiple IPTV providers with default selection.
+- v0.4 (2024-10-01): Fixes the 403 error when trying to get series info.
 
 Copyright 2024 Mario Montoya
 
@@ -126,8 +127,11 @@ async def ui_search_stream():
     episodes = []
 
     for info_url in info_urls:
-        # Make the request to the URL
-        response = requests.get(info_url)
+        # Make the request to the URL with suitable User-Agent to fix 403 error.
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
+        response = requests.get(info_url, headers=headers)
 
         # Check if the request was successful
         if response.status_code == 200:
