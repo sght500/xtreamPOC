@@ -10,6 +10,7 @@ Version History:
 - v0.2 (2024-09-15): Adds "Replay" switch to replay stream when it fails.
 - v0.3 (2024-09-30): Supports multiple IPTV providers with default selection.
 - v0.4 (2024-10-01): Fixes the 403 error when trying to get series info.
+- v0.5 (2024-10-04): Fixes the "stream_type" missing key when searching series.
 
 Copyright 2024 Mario Montoya
 
@@ -109,7 +110,8 @@ async def ui_search_stream():
     # Iterates the streams
     print("Type - Stream Id - Name", end="")
     for stream in streams:
-        if stream['stream_type'] == 'series':
+        stream_type = stream.get('stream_type', 'series')
+        if stream_type == 'series':
             series_id = stream['series_id']
             info_url = xt.get_series_info_URL_by_ID(series_id)
             # Add series_id without repetition
@@ -117,8 +119,8 @@ async def ui_search_stream():
                 info_urls.append(info_url)
         else:
             print('')
-            print(f"{stream['stream_type']} - {stream['stream_id']} - {stream['name']}", end="")
-            add_card(stream['stream_type'], stream['stream_id'], stream['name'], stream['stream_icon'], streams=streams)
+            print(f"{stream_type} - {stream['stream_id']} - {stream['name']}", end="")
+            add_card(stream_type, stream['stream_id'], stream['name'], stream['stream_icon'], streams=streams)
             ui.update() # Required in slower PCs.
             await asyncio.sleep(.25) # Required for ui self-refresh.
     print('')
