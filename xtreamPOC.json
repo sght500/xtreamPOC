@@ -3,23 +3,23 @@
     "config_version": 0.5,
     "mpv_path": "C:\\path\\to\\mpv\\mpv.exe",
     "time_out": 4,
-    "default": "1",
+    "default": "2",
     "shift_1-9": "!\"#$%&/()",
     "iptv_providers": [
         {
-            "provider_name": "YourProviderName1",
+            "provider_name": "YourProviderName01",
             "username": "user",
             "password": "1234",
             "provider_url": "http://yourproviderurl.com:8080/"
         },
         {
-            "provider_name": "YourProviderName2",
+            "provider_name": "YourProviderName02",
             "username": "user",
             "password": "5678",
             "provider_url": "http://yourproviderurl.xyz:8080/"
         },
         {
-            "provider_name": "YourProviderName3",
+            "provider_name": "YourProviderName03",
             "username": "user",
             "password": "9876",
             "provider_url": "http://yourproviderurl.vip:8080/"
