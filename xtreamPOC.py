@@ -11,6 +11,7 @@ Version History:
 - v0.3 (2024-09-30): Supports multiple IPTV providers with default selection.
 - v0.4 (2024-10-01): Fixes the 403 error when trying to get series info.
 - v0.5 (2024-10-04): Fixes the "stream_type" missing key when searching series.
+- v0.6 (2024-10-05): Adds the "Record" option.
 
 Copyright 2024 Mario Montoya
 
@@ -36,42 +37,70 @@ import random
 import asyncio
 import json
 from pytimedinput import timedKey
+from datetime import datetime
 # TODO Remove duplicate streams, like movies.
 
 # Open the "xtreamPOC.json" file and fill in:
 #   * The path to the mpv.exe file in Windows
+#   * The path so save streams in Windows
+#   * The path so save streams in macOS or Linux
 #   * Your Xtream Provider credentials.
 
-def open_stream_url(url):
+def open_stream_url(url, count):
+    # Builds the stream-record argument
+    stream_record = ""
+    if record.value:
+        # Builds the file name:
+        extension = url[url.rfind('.') + 1:]
+        now = datetime.now()
+        julian_date_time = now.strftime('%Y%j_%H%M_')
+        short_julian_time = julian_date_time[-10:]
+        filename = f"{short_julian_time}{count:03}.{extension}"
+        if platform.system() == "Windows":
+            stream_record = f"--stream-record={mpv_rec_win}{filename}"
+        elif platform.system() == "Darwin" or platform.system() == "Linux":  # macOS or Linux
+            stream_record = f"--stream-record={mpv_rec_linux}{filename}"
     # Specify the command-line arguments
-    args = ['--slang=eng', '--alang=eng', '--fullscreen', url]
+    args = ['--slang=eng', '--alang=eng', '--fullscreen', stream_record, url]
     # Run the mpv command
     if platform.system() == "Windows":
         subprocess.run([mpv_path] + args)
     elif platform.system() == "Darwin" or platform.system() == "Linux":  # macOS or Linux
         subprocess.run(['mpv'] + args)
     else:
-        raise OSError("Unsupported operating system")    
+        raise OSError("Unsupported operating system")
+
+def get_gerund_and_color_from_record_value():
+    if record.value:
+        gerund = "Recording"
+        color="red"
+    else:
+        gerund = "Playing"
+        color=""
+    return (gerund, color)
 
 async def play_stream_id(stream_id, streams):
+    gerund, color = get_gerund_and_color_from_record_value()
     played = False
     for stream in streams:
         if stream_id == stream.get('stream_id', 0) and not played:
-            print(f"Playig {stream['name']}")
-            ui.notify(f"Playig {stream['name']}")
+            print(f"{gerund} {stream['name']}")
+            ui.notify(f"{gerund} {stream['name']}", color=color)
+            count = 1
             while True:
-                await asyncio.to_thread(open_stream_url, stream['url'])
-                ui.update(replay)
-                if not replay.value:
+                await asyncio.to_thread(open_stream_url, stream['url'], count)
+                if not replay.value or not stream.get("stream_type", "") == "live":
                     break
+                count = count + 1
             played = True
 
 async def play_episode_id(episode_id, episodes):
+    gerund, color = get_gerund_and_color_from_record_value()
     for episode_obj in episodes:
         if episode_obj.id == episode_id:
-            print(f"Playing {episode_obj.title}")
-            ui.notify(f"Playing {episode_obj.title}")
-            await asyncio.to_thread(open_stream_url, episode_obj.url)
+            print(f"{gerund} {episode_obj.title}")
+            ui.notify(f"{gerund} {episode_obj.title}", color=color)
+            await asyncio.to_thread(open_stream_url, episode_obj.url, 1)
 
 def is_valid_image_url(url):
     try:
@@ -195,9 +224,10 @@ async def ui_search_stream():
 # Page title and search row
 ui.page_title('xtreamPOC - sght500')
 with ui.row().style('width: 100%;') as search_row:
-    search_input = ui.input("Enter name to search:", placeholder="For Example: Game of Thrones").style('width: 68%;')
-    ui.button('Search', on_click=lambda: asyncio.create_task(ui_search_stream())).style('width: 18%;')
-    replay = ui.switch("Replay").style('width: 10%;')
+    search_input = ui.input("Enter name to search:", placeholder="For Example: Game of Thrones").style('width: 63%;')
+    ui.button('Search', on_click=lambda: asyncio.create_task(ui_search_stream())).style('width: 16%;')
+    replay = ui.switch("Replay").style('width: 8%;')
+    record = ui.checkbox("Record").style('width: 8%; font-weight: bold; color: red')
 # Two result rows
 channel_row = ui.row()
 serie_row = ui.row()
@@ -226,6 +256,8 @@ Mario Montoya <marioSGHT500@gmail.com>
 with open('xtreamPOC.json', 'r') as file:
     config = json.load(file)
 mpv_path = config['mpv_path']
+mpv_rec_win = config['mpv_rec_win']
+mpv_rec_linux = config['mpv_rec_linux']
 providers = config['iptv_providers']
 time_out = config['time_out']
 default = config['default']
