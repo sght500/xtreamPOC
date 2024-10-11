@@ -1,7 +1,7 @@
 # xtreamPOC - A proof of concept of Xtream Portal Codes
 Proof of Concept of Xtream Portal Codes using pyxtream, mpv and nicegui.
 
-# Why I creared this script
+# Why I created this script
 I needed an IPTV player that can run on Linux on an old PC. By old, I mean an HP 1000 with an Intel Core i3 CPU and 4 GB of memory. I run Linux Mint on that computer, which is plugged into my TV via HDMI. I tried to play my IPTV content with Hypnotix, which is pre-installed, but Hypnotix crashed 90% of the time with my IPTV provider.
 
 Then I tried the IPTV Smarters Web Player: http://webtv.iptvsmarters.com. The issues with Smarters Web were:
