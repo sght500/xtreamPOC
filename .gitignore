@@ -1,2 +1,3 @@
-# Ignore my local IPTV Configuration File
+# Ignore my local IPTV Configuration File.
+# You can safely enter your credentials in your cloned repo. Git won't track changes there.
 xtreamPOC.json
