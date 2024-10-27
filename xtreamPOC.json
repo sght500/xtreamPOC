@@ -3,7 +3,7 @@
     "config_version": 0.6,
     "mpv_path": "C:\\path\\to\\mpv\\mpv.exe",
     "mpv_rec_win": "C:\\path\\to\\recordings\\",
-    "mpv_rec_linux": "~/Desktop/recordings/",
+    "mpv_rec_linux": "/path/to/recordings/",
     "time_out": 4,
     "default": "1",
     "shift_1-9": "!\"#$%&/()",

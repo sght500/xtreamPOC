@@ -12,6 +12,7 @@ Version History:
 - v0.4 (2024-10-01): Fixes the 403 error when trying to get series info.
 - v0.5 (2024-10-04): Fixes the "stream_type" missing key when searching series.
 - v0.6 (2024-10-05): Adds the "Record" option.
+- v0.7 (2024-10-25): Adds the Frequent Search functionality.
 
 Copyright 2024 Mario Montoya
 
@@ -36,6 +37,7 @@ from nicegui import ui
 import random
 import asyncio
 import json
+import os
 from pytimedinput import timedKey
 from datetime import datetime
 # TODO Remove duplicate streams, like movies.
@@ -45,6 +47,78 @@ from datetime import datetime
 #   * The path so save streams in Windows
 #   * The path so save streams in macOS or Linux
 #   * Your Xtream Provider credentials.
+
+# Define the path for the JSON file to store search history
+SEARCH_HISTORY_FILE = 'search_history.json'
+# Threshold for search to become "frequent"
+FREQUENT_THRESHOLD = 3
+
+# Load the search history from the JSON file, if it exists
+def load_search_history():
+    if os.path.exists(SEARCH_HISTORY_FILE):
+        try:
+            with open(SEARCH_HISTORY_FILE, 'r') as file:
+                return json.load(file)
+        except json.JSONDecodeError:
+            print("Warning: Failed to decode JSON, starting with an empty search history.")
+    return {}  # Return an empty dictionary if the file doesn't exist or can't be read
+
+# Function to get the most popular capitalization of a search term
+def get_most_popular_case(search_text):
+    normalized_search = search_text.lower()
+    # Check if the search exists in history
+    if normalized_search in search_history:
+        # Find the most popular original case (the one that appears most frequently)
+        case_count = {}
+        for case in search_history[normalized_search]['original_cases']:
+            case_count[case] = case_count.get(case, 0) + 1
+        # Return the most frequent original case
+        return max(case_count, key=case_count.get)
+    # If not found, return the original search text
+    return search_text
+
+# Function to get frequent searches
+def get_frequent_searches():
+    frequent_searches = []
+    for search, data in search_history.items():
+        if data['count'] >= FREQUENT_THRESHOLD:
+            # Append the most popular case of the search
+            frequent_searches.append(get_most_popular_case(search))
+    return frequent_searches
+
+# Initialize the search history dictionary from the file
+search_history = load_search_history()
+frequent_searches = get_frequent_searches()
+search_value = ''
+
+# Function to add a search to the history and update the search frequency
+def add_save_search_text(search_text):
+    normalized_search = search_text.strip().lower()  # Normalize search (remove leading/trailing spaces and lowercase)
+    
+    # Count frequency of search
+    if normalized_search in search_history:
+        search_history[normalized_search]['count'] += 1
+        search_history[normalized_search]['original_cases'].append(search_text)
+    else:
+        search_history[normalized_search] = {
+            'count': 1,
+            'original_cases': [search_text]
+        }
+    
+    # Store the current search at the beginning
+    ordered_history = {}
+    ordered_history[normalized_search] = search_history[normalized_search]  # Add current search first
+    for key, value in search_history.items():
+        if key != normalized_search:
+            ordered_history[key] = value  # Add the rest of the searches
+
+    # Clean up search_history and pass all data from ordered_history
+    search_history.clear()  # Remove all existing entries from search_history
+    search_history.update(ordered_history)  # Copy all entries from ordered_history
+
+    # Save the updated search history after adding a search in JSON file
+    with open(SEARCH_HISTORY_FILE, 'w') as file:
+        json.dump(search_history, file, indent=4)
 
 def open_stream_url(url, count):
     # Builds the stream-record argument
@@ -132,7 +206,8 @@ async def ui_search_stream():
     channel_row.clear()
     serie_row.clear()
     # Search for streams by name
-    search_string = search_input.value
+    search_string = select_search.value
+    add_save_search_text(search_string)
     streams = xt.search_stream(r"^.*{}.*$".format(search_string))
     # Initialize the info_urls
     info_urls = []
@@ -221,10 +296,25 @@ async def ui_search_stream():
                                 add_label(episode_obj, episodes)
                                 await asyncio.sleep(.01) # Required for ui self-refresh.
 
+def on_input(value):
+    global search_value
+    search_value = value
+
+def on_blur():
+    if search_value not in frequent_searches:
+        select_search.options = [search_value] + frequent_searches
+        select_search.set_value(search_value)
+
 # Page title and search row
 ui.page_title('xtreamPOC - sght500')
 with ui.row().style('width: 100%;') as search_row:
-    search_input = ui.input("Enter name to search:", placeholder="For Example: Game of Thrones").style('width: 63%;')
+    select_search = ui.select(
+        options=frequent_searches,
+        label="Enter name to search: (For example: \"Game of Thrones\")",
+        with_input=True
+    ).style('width: 63%;')
+    select_search.on("input-value", lambda e: on_input(e.args))
+    select_search.on("blur", lambda: on_blur())
     ui.button('Search', on_click=lambda: asyncio.create_task(ui_search_stream())).style('width: 16%;')
     replay = ui.switch("Replay").style('width: 8%;')
     record = ui.checkbox("Record").style('width: 8%; font-weight: bold; color: red')
