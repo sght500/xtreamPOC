@@ -19,7 +19,7 @@ This script connects to my IPTV provider using soperolmo's pyxtream. I search fo
 # How you can use it
 You can use this script if you have an IPTV provider that supports Xtream Codes. If your IPTV provider only supports m3u lists, then this script won't work for you.
 
-Check the steps in the <code>tutorial</code> folder. You will see where you have to fill in your IPTV provider name and your credentials.
+Check the steps in the [tutorial](tutorial) folder. You will see where you have to fill in your IPTV provider name and your credentials.
 
 # What you will need
 You need to install mpv to be able to play your content. You will also need to install the Python libraries required for this script.
